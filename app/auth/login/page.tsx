@@ -1,9 +1,92 @@
-import Link from "next/link";
-import { Utensils } from "lucide-react";
-import { AuthForm } from "@/components/forms/auth-form";
-import { APP_NAME } from "@/lib/constants";
+"use client";
 
-export default function LoginPage() {
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Utensils } from "lucide-react";
+import { AuthForm, type AuthFormData } from "@/components/forms/auth-form";
+import {
+  AuthDivider,
+  GitHubSignInButton,
+  GoogleSignInButton,
+} from "@/components/forms/google-sign-in-button";
+import { APP_NAME } from "@/lib/constants";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase/client";
+
+type OAuthProvider = "google" | "github";
+
+function LoginPage() {
+  const router = useRouter();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: "success" | "error", message: string } | null>(null);
+  useEffect(() => {
+    const checkSessionExists = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (user) {
+        setStatus({ type: "success", message: "You are already logged in" });
+        setTimeout(() => {
+          router.replace("/dashboard")
+        }, 1500)
+      }
+      if (error) {
+        setStatus({ type: "error", message: error.message });
+        return;
+      }
+    }
+    checkSessionExists().catch(console.error)
+  }, [])
+  const handleLogin = async (data: AuthFormData["login"]): Promise<void> => {
+    if (data.email.length < 2) {
+      toast.error("Email must be at least 2 characters");
+      return;
+    }
+    if (data.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Welcome back!");
+    router.push("/dashboard");
+  };
+
+  const handleOAuthLogin = async (
+    provider: OAuthProvider,
+    setLoading: (loading: boolean) => void
+  ): Promise<void> => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="rounded-2xl border border-white/10 bg-white/40 p-8 shadow-xl backdrop-blur-xl dark:bg-white/5">
       <div className="mb-8 text-center">
@@ -16,7 +99,24 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <AuthForm type="login" />
+      <AuthForm type="login" onSubmit={handleLogin} />
+
+      <AuthDivider />
+
+      <div className="space-y-3">
+        <GoogleSignInButton
+          onClick={() => handleOAuthLogin("google", setGoogleLoading)}
+          loading={googleLoading}
+          disabled={githubLoading}
+          label="Sign in with Google"
+        />
+        <GitHubSignInButton
+          onClick={() => handleOAuthLogin("github", setGithubLoading)}
+          loading={githubLoading}
+          disabled={googleLoading}
+          label="Sign in with GitHub"
+        />
+      </div>
 
       <div className="mt-6 space-y-2 text-center text-sm">
         <p>
@@ -40,3 +140,4 @@ export default function LoginPage() {
     </div>
   );
 }
+export default LoginPage;

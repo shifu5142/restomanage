@@ -31,7 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockData } from "@/data/mock";
 import { formatCurrency, formatDate, formatTime } from "@/lib/format";
 
-export default function DashboardPage() {
+function DashboardPage() {
   const { dashboardStats, weeklyChartData, orders, reservations } = mockData;
 
   const recentOrders = [...orders]
@@ -188,3 +188,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+export default DashboardPage;

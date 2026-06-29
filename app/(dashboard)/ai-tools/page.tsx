@@ -1,5 +1,6 @@
 import { AiToolsView } from "@/components/ai-tools/ai-tools-view";
 
-export default function AiToolsPage() {
+function AiToolsPage() {
   return <AiToolsView />;
 }
+export default AiToolsPage;

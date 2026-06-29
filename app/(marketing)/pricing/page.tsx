@@ -71,7 +71,7 @@ const plans = [
   },
 ];
 
-export default function PricingPage() {
+function PricingPage() {
   return (
     <div className="bg-gradient-to-b from-amber-50/50 via-orange-50/30 to-background dark:from-amber-950/20 dark:via-background dark:to-orange-950/10">
       <section className="relative overflow-hidden py-20">
@@ -147,3 +147,4 @@ export default function PricingPage() {
     </div>
   );
 }
+export default PricingPage;

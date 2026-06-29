@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { mockData } from "@/data/mock";
 import { formatCurrency, formatDate } from "@/lib/format";
 
-export default function CustomersPage() {
+function CustomersPage() {
   const { customers } = mockData;
   const totalSpent = customers.reduce((s, c) => s + c.totalSpent, 0);
   const avgLoyalty = customers.reduce((s, c) => s + c.loyaltyPoints, 0) / customers.length;
@@ -76,3 +76,4 @@ export default function CustomersPage() {
     </div>
   );
 }
+export default CustomersPage;

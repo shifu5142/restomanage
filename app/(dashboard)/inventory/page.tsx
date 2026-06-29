@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { mockData } from "@/data/mock";
 import { formatCurrency, formatDate } from "@/lib/format";
 
-export default function InventoryPage() {
+function InventoryPage() {
   const { inventory } = mockData;
 
   const lowStock = inventory.filter((i) => i.quantity <= i.minStock);
@@ -112,3 +112,4 @@ export default function InventoryPage() {
     </div>
   );
 }
+export default InventoryPage;

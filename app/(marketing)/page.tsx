@@ -132,7 +132,7 @@ const faqs = [
   },
 ];
 
-export default function LandingPage() {
+function LandingPage() {
   return (
     <div className="bg-gradient-to-b from-amber-50/50 via-orange-50/30 to-amber-100/40 dark:from-amber-950/20 dark:via-background dark:to-orange-950/10">
       <Hero />
@@ -351,3 +351,4 @@ export default function LandingPage() {
     </div>
   );
 }
+export default LandingPage;

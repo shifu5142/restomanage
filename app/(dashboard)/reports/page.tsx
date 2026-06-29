@@ -57,7 +57,7 @@ function handleExport(report: string, format: string) {
   });
 }
 
-export default function ReportsPage() {
+function ReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Reports" description="Generate and export business reports." />
@@ -101,3 +101,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+export default ReportsPage;

@@ -12,7 +12,7 @@ import { BarChart3, TrendingUp, Users } from "lucide-react";
 import { mockData } from "@/data/mock";
 import { formatCurrency } from "@/lib/format";
 
-export default function AnalyticsPage() {
+function AnalyticsPage() {
   const { dashboardStats, weeklyChartData, hourlyData, categorySales } = mockData;
 
   return (
@@ -36,3 +36,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+export default AnalyticsPage;

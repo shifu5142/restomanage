@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { mockData } from "@/data/mock";
 import { capitalize, formatCurrency } from "@/lib/format";
 
-export default function EmployeesPage() {
+function EmployeesPage() {
   const { employees } = mockData;
   const active = employees.filter((e) => e.status === "active").length;
   const avgPerformance = employees.reduce((s, e) => s + e.performance, 0) / employees.length;
@@ -76,3 +76,4 @@ export default function EmployeesPage() {
     </div>
   );
 }
+export default EmployeesPage;

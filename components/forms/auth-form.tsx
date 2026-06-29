@@ -36,6 +36,15 @@ const resetSchema = z.object({
 
 type AuthType = "login" | "register" | "forgot" | "reset";
 
+type AuthFormData = {
+  login: z.infer<typeof loginSchema>;
+  register: z.infer<typeof registerSchema>;
+  forgot: z.infer<typeof forgotSchema>;
+  reset: z.infer<typeof resetSchema>;
+};
+
+export type { AuthFormData };
+
 const schemas = {
   login: loginSchema,
   register: registerSchema,
@@ -43,7 +52,12 @@ const schemas = {
   reset: resetSchema,
 };
 
-export function AuthForm({ type }: { type: AuthType }) {
+type AuthFormProps<T extends AuthType = AuthType> = {
+  type: T;
+  onSubmit?: (data: AuthFormData[T]) => void | Promise<void>;
+};
+
+export function AuthForm<T extends AuthType>({ type, onSubmit: onSubmitProp }: AuthFormProps<T>) {
   const router = useRouter();
   const schema = schemas[type];
 
@@ -63,7 +77,11 @@ export function AuthForm({ type }: { type: AuthType }) {
     { message?: string } | undefined
   >;
 
-  const onSubmit = form.handleSubmit(() => {
+  const onSubmit = form.handleSubmit(async (data) => {
+    if (onSubmitProp) {
+      await onSubmitProp(data as AuthFormData[T]);
+      return;
+    }
     if (type === "forgot") {
       toast.success("Reset link sent to your email");
       return;
@@ -115,7 +133,7 @@ export function AuthForm({ type }: { type: AuthType }) {
           )}
         </div>
       )}
-      <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600" disabled={form.formState.isSubmitting}>
+      <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={form.formState.isSubmitting}>
         {type === "login" && "Sign In"}
         {type === "register" && "Create Account"}
         {type === "forgot" && "Send Reset Link"}

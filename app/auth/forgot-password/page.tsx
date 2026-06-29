@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Utensils } from "lucide-react";
 import { AuthForm } from "@/components/forms/auth-form";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordPage() {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/40 p-8 shadow-xl backdrop-blur-xl dark:bg-white/5">
       <div className="mb-8 text-center">
@@ -29,3 +29,4 @@ export default function ForgotPasswordPage() {
     </div>
   );
 }
+export default ForgotPasswordPage;
