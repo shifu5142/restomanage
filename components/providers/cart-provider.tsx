@@ -150,6 +150,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         partySize: item.partySize,
         date: item.date,
         time: item.time,
+        tableId: item.tableId,
         status: "pending",
         notes: item.notes,
         total: item.total,

@@ -4,6 +4,9 @@ export type ReservationCartItem = {
   date: string;
   time: string;
   partySize: number;
+  tableId: string;
+  tableNumber: number;
+  tableSection: string;
   notes?: string;
   baseFee: number;
   guestFee: number;

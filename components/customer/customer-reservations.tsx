@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CalendarDays, ShoppingCart, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/dashboard/status-badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
+import { TableSelect } from "@/components/ui/table-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +25,12 @@ import {
   RESERVATION_BASE_FEE,
   RESERVATION_PER_GUEST_FEE,
 } from "@/lib/reservations/pricing";
+import {
+  collectReservationBookings,
+  formatTableLabel,
+  getBookableTables,
+  getTableById,
+} from "@/lib/reservations/tables";
 import { formatCurrency, formatDate, formatTime } from "@/lib/format";
 import type { Reservation } from "@/types";
 
@@ -31,6 +38,7 @@ const EMPTY_FORM = {
   date: "",
   time: "",
   partySize: "2",
+  tableId: "",
   notes: "",
 };
 
@@ -42,6 +50,44 @@ export function CustomerReservations() {
 
   const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
   const [form, setForm] = useState(EMPTY_FORM);
+  const partySize = parseInt(form.partySize, 10) || 2;
+
+  const availableTables = useMemo(() => {
+    const bookings = collectReservationBookings(
+      mockData.reservations,
+      reservationItems.map((item) => ({
+        tableId: item.tableId,
+        date: item.date,
+        time: item.time,
+      })),
+      confirmedReservations
+    );
+
+    return getBookableTables(
+      mockData.tables,
+      partySize,
+      form.date,
+      form.time,
+      bookings
+    );
+  }, [
+    partySize,
+    form.date,
+    form.time,
+    reservationItems,
+    confirmedReservations,
+  ]);
+
+  const tableSelectReady = Boolean(form.date && form.time && form.partySize);
+
+  useEffect(() => {
+    if (
+      form.tableId &&
+      !availableTables.some((table) => table.id === form.tableId)
+    ) {
+      setForm((current) => ({ ...current, tableId: "" }));
+    }
+  }, [availableTables, form.tableId]);
 
   const baseReservations = useMemo(
     () => mockData.reservations.filter((r) => r.customerEmail === userEmail),
@@ -90,8 +136,17 @@ export function CustomerReservations() {
       toast.error("Please select a date and time.");
       return;
     }
+    if (!form.tableId) {
+      toast.error("Please select a table.");
+      return;
+    }
 
-    const partySize = parseInt(form.partySize, 10) || 2;
+    const table = getTableById(mockData.tables, form.tableId);
+    if (!table) {
+      toast.error("Selected table is no longer available.");
+      return;
+    }
+
     const pricing = calculateReservationPricing(partySize);
     const { date, time } = form;
 
@@ -99,13 +154,16 @@ export function CustomerReservations() {
       date,
       time,
       partySize,
+      tableId: table.id,
+      tableNumber: table.number,
+      tableSection: table.section,
       notes: form.notes || undefined,
       ...pricing,
     });
 
     setForm(EMPTY_FORM);
     toast.success("Reservation added to cart", {
-      description: `${formatDate(date)} at ${formatTime(time)} · ${formatCurrency(pricing.total)}`,
+      description: `${formatDate(date)} at ${formatTime(time)} · ${formatTableLabel(table)} · ${formatCurrency(pricing.total)}`,
     });
   }
 
@@ -136,6 +194,18 @@ export function CustomerReservations() {
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 {formatTime(reservation.time)} · Party of {reservation.partySize}
+                {reservation.tableId && (
+                  <>
+                    {" "}
+                    ·{" "}
+                    {(() => {
+                      const table = getTableById(mockData.tables, reservation.tableId!);
+                      return table
+                        ? formatTableLabel(table)
+                        : reservation.tableId;
+                    })()}
+                  </>
+                )}
               </p>
               {reservation.notes && (
                 <p className="mt-2 text-sm text-muted-foreground">{reservation.notes}</p>
@@ -190,7 +260,12 @@ export function CustomerReservations() {
                       min={today}
                       value={form.date}
                       onChange={(date) =>
-                        setForm({ ...form, date, time: date ? form.time : "" })
+                        setForm({
+                          ...form,
+                          date,
+                          time: date ? form.time : "",
+                          tableId: "",
+                        })
                       }
                       placeholder="Choose a date"
                     />
@@ -200,36 +275,59 @@ export function CustomerReservations() {
                     <TimePicker
                       id="res-time"
                       value={form.time}
-                      onChange={(time) => setForm({ ...form, time })}
+                      onChange={(time) => setForm({ ...form, time, tableId: "" })}
                       placeholder="Choose a time"
                       disabled={!form.date}
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="res-party">Party Size</Label>
-                  <Input
-                    id="res-party"
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={form.partySize}
-                    onChange={(e) => setForm({ ...form, partySize: e.target.value })}
-                    className="border-white/10 bg-background/40"
-                  />
-                  {form.partySize && (
-                    <p className="text-xs text-muted-foreground">
-                      Estimated:{" "}
-                      <span className="font-medium text-orange-500">
-                        {formatCurrency(
-                          calculateReservationPricing(parseInt(form.partySize, 10) || 2).total
-                        )}
-                      </span>{" "}
-                      ({formatCurrency(RESERVATION_BASE_FEE)} deposit +{" "}
-                      {formatCurrency(RESERVATION_PER_GUEST_FEE)}/guest)
-                    </p>
-                  )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="res-party">Party Size</Label>
+                    <Input
+                      id="res-party"
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={form.partySize}
+                      onChange={(e) =>
+                        setForm({ ...form, partySize: e.target.value, tableId: "" })
+                      }
+                      className="border-white/10 bg-background/40"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="res-table">Table</Label>
+                    <TableSelect
+                      id="res-table"
+                      tables={availableTables}
+                      allTables={mockData.tables}
+                      value={form.tableId}
+                      onChange={(tableId) => setForm({ ...form, tableId })}
+                      placeholder="Choose a table"
+                      disabled={!tableSelectReady}
+                    />
+                  </div>
                 </div>
+                {form.partySize && (
+                  <p className="text-xs text-muted-foreground">
+                    Estimated:{" "}
+                    <span className="font-medium text-orange-500">
+                      {formatCurrency(
+                        calculateReservationPricing(parseInt(form.partySize, 10) || 2).total
+                      )}
+                    </span>{" "}
+                    ({formatCurrency(RESERVATION_BASE_FEE)} deposit +{" "}
+                    {formatCurrency(RESERVATION_PER_GUEST_FEE)}/guest)
+                    {tableSelectReady && (
+                      <>
+                        {" "}
+                        · {availableTables.length} table
+                        {availableTables.length === 1 ? "" : "s"} available
+                      </>
+                    )}
+                  </p>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="res-notes">Special Requests</Label>
                   <Textarea
@@ -315,8 +413,8 @@ export function CustomerReservations() {
                     >
                       <p className="font-medium">{formatDate(item.date)}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatTime(item.time)} · {item.partySize} guests ·{" "}
-                        {formatCurrency(item.total)}
+                        {formatTime(item.time)} · {item.partySize} guests · Table{" "}
+                        {item.tableNumber} · {formatCurrency(item.total)}
                       </p>
                     </div>
                   ))}

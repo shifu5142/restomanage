@@ -44,7 +44,8 @@ function ReservationCartRow({
           <div className="min-w-0">
             <p className="font-semibold">{formatDate(item.date)}</p>
             <p className="text-sm text-muted-foreground">
-              {formatTime(item.time)} · Party of {item.partySize}
+              {formatTime(item.time)} · Party of {item.partySize} · Table {item.tableNumber}{" "}
+              · {item.tableSection}
             </p>
             {item.notes && (
               <p className="mt-1 text-xs text-muted-foreground">{item.notes}</p>
@@ -326,6 +327,12 @@ export function CustomerCart() {
                           </span>
                         </div>
                         <div className="space-y-0.5 text-[11px] text-muted-foreground">
+                          <div className="flex justify-between">
+                            <span>Table</span>
+                            <span>
+                              T{item.tableNumber} · {item.tableSection}
+                            </span>
+                          </div>
                           <div className="flex justify-between">
                             <span>Deposit</span>
                             <span>{formatCurrency(item.baseFee)}</span>
