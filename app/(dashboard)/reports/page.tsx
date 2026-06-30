@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminRouteGuard } from "@/components/auth/admin-route-guard";
 import { Download, FileSpreadsheet, FileText, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -59,6 +60,7 @@ function handleExport(report: string, format: string) {
 
 function ReportsPage() {
   return (
+    <AdminRouteGuard>
     <div className="space-y-6">
       <PageHeader title="Reports" description="Generate and export business reports." />
 
@@ -99,6 +101,7 @@ function ReportsPage() {
         ))}
       </div>
     </div>
+    </AdminRouteGuard>
   );
 }
 export default ReportsPage;

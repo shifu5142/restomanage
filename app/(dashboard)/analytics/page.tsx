@@ -1,3 +1,4 @@
+import { AdminRouteGuard } from "@/components/auth/admin-route-guard";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import {
@@ -16,6 +17,7 @@ function AnalyticsPage() {
   const { dashboardStats, weeklyChartData, hourlyData, categorySales } = mockData;
 
   return (
+    <AdminRouteGuard>
     <div className="space-y-6">
       <PageHeader title="Analytics" description="Deep insights into your restaurant performance." />
 
@@ -34,6 +36,7 @@ function AnalyticsPage() {
         <CategorySalesChart data={categorySales} />
       </div>
     </div>
+    </AdminRouteGuard>
   );
 }
 export default AnalyticsPage;

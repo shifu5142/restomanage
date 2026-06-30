@@ -95,6 +95,8 @@ export interface Reservation {
   notes?: string;
   specialRequests?: string;
   createdAt: string;
+  /** Table hold deposit + per-guest fee total */
+  total?: number;
 }
 
 export interface OrderItem {

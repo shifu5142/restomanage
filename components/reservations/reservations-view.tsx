@@ -193,13 +193,29 @@ export function ReservationsView({ reservations }: ReservationsViewProps) {
 
         <TabsContent value="calendar">
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="border-white/10 bg-card/60 backdrop-blur-xl">
-              <CardContent className="flex justify-center pt-6">
+            <Card className="overflow-hidden border-white/10 bg-card/60 backdrop-blur-xl">
+              <div className="border-b border-white/10 bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-transparent px-5 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-orange-500">
+                  Calendar
+                </p>
+                <p className="mt-0.5 font-semibold">
+                  {calendarDate ? formatDate(calendarDate.toISOString()) : "Select a date"}
+                </p>
+              </div>
+              <CardContent className="flex justify-center pt-4 pb-2">
                 <Calendar
                   mode="single"
                   selected={calendarDate}
                   onSelect={setCalendarDate}
-                  className="rounded-xl"
+                  className="p-2 [--cell-size:2.5rem]"
+                  classNames={{
+                    caption_label: "text-sm font-semibold",
+                    weekday: "text-xs font-medium text-muted-foreground",
+                    today: "bg-orange-500/15 font-semibold text-orange-600 dark:text-orange-400",
+                    button_previous:
+                      "rounded-lg hover:bg-orange-500/10 hover:text-orange-600",
+                    button_next: "rounded-lg hover:bg-orange-500/10 hover:text-orange-600",
+                  }}
                 />
               </CardContent>
             </Card>

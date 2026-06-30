@@ -1,3 +1,4 @@
+import { AdminRouteGuard } from "@/components/auth/admin-route-guard";
 import { Mail, Phone, Star, UserCheck } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -14,6 +15,7 @@ function EmployeesPage() {
   const avgPerformance = employees.reduce((s, e) => s + e.performance, 0) / employees.length;
 
   return (
+    <AdminRouteGuard>
     <div className="space-y-6">
       <PageHeader title="Employees" description="Manage your team, shifts, and performance." />
 
@@ -74,6 +76,7 @@ function EmployeesPage() {
         ))}
       </div>
     </div>
+    </AdminRouteGuard>
   );
 }
 export default EmployeesPage;

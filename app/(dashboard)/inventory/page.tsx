@@ -1,3 +1,4 @@
+import { AdminRouteGuard } from "@/components/auth/admin-route-guard";
 import { AlertTriangle, Package, TrendingDown } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -30,6 +31,7 @@ function InventoryPage() {
   ).map(([name, value]) => ({ name, value: Math.round(value) }));
 
   return (
+    <AdminRouteGuard>
     <div className="space-y-6">
       <PageHeader title="Inventory" description="Track stock levels, suppliers, and restocking needs." />
 
@@ -110,6 +112,7 @@ function InventoryPage() {
         <CategorySalesChart data={categoryChart} />
       </div>
     </div>
+    </AdminRouteGuard>
   );
 }
 export default InventoryPage;

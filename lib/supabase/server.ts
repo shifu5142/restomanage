@@ -34,7 +34,7 @@ export async function checkSession() {
   } = await supabase.auth.getUser()
 
   if (error || !user) {
-    redirect("/login")
+    redirect("/auth/login")
   }
 
   return user

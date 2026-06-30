@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, LogOut, Search } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,87 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { mockData } from "@/data/mock";
 import { formatRelative } from "@/lib/format";
+import { useUser } from "@/hooks/use-user";
+import { useRole } from "@/hooks/use-role";
+import { getProviderLabel } from "@/lib/auth/get-user-display";
+import { supabase } from "@/lib/supabase/client";
+import { toast } from "sonner";
+
+function UserAvatarMenu() {
+  const router = useRouter();
+  const { display, loading } = useUser();
+  const { isAdmin } = useRole();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    router.push("/auth/login");
+  };
+
+  if (loading) {
+    return <Skeleton className="size-8 rounded-full" />;
+  }
+
+  if (!display) {
+    return null;
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="relative h-9 gap-2 rounded-full px-2 hover:bg-muted/80"
+        >
+          <Avatar className="size-8 ring-2 ring-orange-500/20">
+            <AvatarImage src={display.avatar} alt={display.name} />
+            <AvatarFallback className="bg-orange-500/10 text-xs font-semibold text-orange-600">
+              {display.initials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="hidden max-w-[120px] truncate text-sm font-medium md:inline">
+            {display.name}
+          </span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col gap-1.5">
+            <p className="truncate font-semibold">{display.name}</p>
+            {display.username && (
+              <p className="truncate text-xs text-muted-foreground">@{display.username}</p>
+            )}
+            <p className="truncate text-xs text-muted-foreground">{display.email}</p>
+            <Badge variant="secondary" className="mt-1 w-fit text-[10px] capitalize">
+              {isAdmin ? "Admin" : "Customer"} · via {getProviderLabel(display.provider)}
+            </Badge>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/settings">Settings</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/support">Support</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="cursor-pointer text-destructive focus:text-destructive"
+          onClick={handleLogout}
+        >
+          <LogOut className="mr-2 size-4" />
+          Logout
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function DashboardHeader() {
   const unreadCount = mockData.notifications.filter((n) => !n.read).length;
@@ -57,30 +137,7 @@ export function DashboardHeader() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative size-8 rounded-full p-0">
-              <Avatar className="size-8">
-                <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" />
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>James Davidson</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/settings">Settings</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/support">Support</Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/auth/login">Logout</Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <UserAvatarMenu />
       </div>
     </header>
   );

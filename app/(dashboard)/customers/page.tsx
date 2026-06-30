@@ -1,3 +1,4 @@
+import { AdminRouteGuard } from "@/components/auth/admin-route-guard";
 import { Heart, Star, TrendingUp, Users } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -13,6 +14,7 @@ function CustomersPage() {
   const avgLoyalty = customers.reduce((s, c) => s + c.loyaltyPoints, 0) / customers.length;
 
   return (
+    <AdminRouteGuard>
     <div className="space-y-6">
       <PageHeader title="Customers" description="View customer profiles, loyalty, and spending history." />
 
@@ -74,6 +76,7 @@ function CustomersPage() {
         ))}
       </div>
     </div>
+    </AdminRouteGuard>
   );
 }
 export default CustomersPage;
