@@ -7,6 +7,7 @@ export type ReservationCartItem = {
   tableId: string;
   tableNumber: number;
   tableSection: string;
+  phone: string;
   notes?: string;
   baseFee: number;
   guestFee: number;

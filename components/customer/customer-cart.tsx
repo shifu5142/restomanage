@@ -26,6 +26,37 @@ import {
 } from "@/lib/reservations/pricing";
 import { formatCurrency, formatDate, formatTime } from "@/lib/format";
 import type { MenuCartItem, ReservationCartItem } from "@/lib/cart/types";
+import type { Order } from "@/types";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+
+function menuCartItemToOrder(
+  item: MenuCartItem,
+  customer: { name: string; email: string }
+): Order {
+  const createdAt = new Date().toISOString();
+  const total = item.price * item.quantity;
+
+  return {
+    id: `ord-cart-${item.cartId}`,
+    customerName: customer.name,
+    items: [
+      {
+        menuItemId: item.menuItemId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      },
+    ],
+    status: "pending",
+    kitchenStatus: "waiting",
+    paymentStatus: "pending",
+    total,
+    prepTime: 10 + item.quantity * 5,
+    createdAt,
+    timeline: [{ status: "Order Placed", time: createdAt }],
+  };
+}
 
 function ReservationCartRow({
   item,
@@ -56,7 +87,7 @@ function ReservationCartRow({
           type="button"
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+          className="size-8 shrink-0 text-muted-foreground hover:text-destructive cursor-pointer"
           onClick={onRemove}
         >
           <Trash2 className="size-4" />
@@ -173,6 +204,19 @@ export function CustomerCart() {
     confirmMenuOrder,
   } = useCart();
 
+  const customer = {
+    name: display?.name ?? "Guest",
+    email: email ?? "",
+  };
+
+  const [orders, setOrders] = useState<Order[]>(() =>
+    menuItems.map((item) => menuCartItemToOrder(item, customer))
+  );
+
+  useEffect(() => {
+    setOrders(menuItems.map((item) => menuCartItemToOrder(item, customer)));
+  }, [menuItems, customer.name, customer.email]);
+
   const isEmpty = itemCount === 0;
 
   function handleConfirmReservations() {
@@ -183,10 +227,7 @@ export function CustomerCart() {
 
     const total = reservationTotal;
     const count = reservationItems.length;
-    confirmReservations({
-      name: display?.name ?? "Guest",
-      email: email ?? "",
-    });
+    confirmReservations(customer);
 
     toast.success(
       count === 1 ? "Reservation confirmed!" : `${count} reservations confirmed!`,
@@ -195,22 +236,31 @@ export function CustomerCart() {
     router.push("/reservations");
   }
 
-  function handleConfirmMenuOrder() {
-    if (menuItems.length === 0) {
+  async function handleConfirmMenuOrder() {
+    if (orders.length === 0) {
       toast.error("No menu items in your cart.");
       return;
     }
 
-    const total = menuTotal;
-    confirmMenuOrder({
-      name: display?.name ?? "Guest",
-      email: email ?? "",
-    });
-
+    const total = orders.reduce((sum, order) => sum + order.total, 0);
+    confirmMenuOrder(customer);
+    console.log(orders.map((order) => order.items));
+    const orderId = crypto.randomUUID();
+    const{data:{user:{id}}} = await supabase.auth.getUser();
+    const {error} = await supabase.from("orders").insert(orders.map((order) => ({
+      order_id: orderId,
+      user_id: id,
+      total_amount: order.total, // you must calculate this
+  
+      items: order.items, // keep full array here as JSONB
+    })));
     toast.success("Order placed!", {
       description: `Total: ${formatCurrency(total)}. Track it on your orders page.`,
     });
-    router.push("/orders");
+    console.log(error);
+    setTimeout(() => {
+      router.push("/orders");
+    }, 2000);
   }
 
   function handleClearCart() {
@@ -409,7 +459,7 @@ export function CustomerCart() {
 
                 {menuItems.length > 0 && (
                   <Button
-                    className="w-full bg-orange-500 hover:bg-orange-600"
+                    className="w-full bg-orange-500 hover:bg-orange-600 hover:cursor-pointer"
                     variant={reservationItems.length > 0 ? "outline" : "default"}
                     onClick={handleConfirmMenuOrder}
                   >

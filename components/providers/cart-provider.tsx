@@ -146,7 +146,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         id: `res-custom-${Date.now()}-${index}`,
         customerName: customer.name,
         customerEmail: customer.email,
-        customerPhone: "",
+        customerPhone: item.phone,
         partySize: item.partySize,
         date: item.date,
         time: item.time,

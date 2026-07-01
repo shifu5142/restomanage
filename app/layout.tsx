@@ -16,7 +16,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "RestoFlow — Premium Restaurant Management",
-  description: "Modern restaurant management SaaS for owners. Reservations, orders, inventory, analytics, and more.",
+  description:
+    "Modern restaurant management SaaS for owners. Reservations, orders, inventory, analytics, and more.",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
+  },
 };
 
 export default function RootLayout({

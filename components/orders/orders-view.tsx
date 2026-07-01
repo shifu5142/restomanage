@@ -38,7 +38,7 @@ interface OrdersViewProps {
   orders: Order[];
 }
 
-export function OrdersView({ orders }: OrdersViewProps) {
+function OrdersView({ orders }: OrdersViewProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -172,3 +172,4 @@ export function OrdersView({ orders }: OrdersViewProps) {
     </div>
   );
 }
+export default OrdersView;
