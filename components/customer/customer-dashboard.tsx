@@ -7,14 +7,17 @@ import {
   ChefHat,
   Clock,
   MapPin,
+  Percent,
   Phone,
   ShoppingBag,
   Sparkles,
   Star,
+  Tag,
   UtensilsCrossed,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockData } from "@/data/mock";
 import { useRole } from "@/hooks/use-role";
@@ -26,6 +29,45 @@ const ACTION_CARDS = [
   { href: "/orders", label: "Order Food", emoji: "🛒", description: "Place a new order" },
   { href: "/reservations", label: "Reserve Table", emoji: "📅", description: "Book your table" },
   { href: "/orders", label: "My Orders", emoji: "📦", description: "Track your orders" },
+] as const;
+
+const DISCOUNT_PACKAGES = [
+  {
+    id: "lunch-combo",
+    name: "Lunch Combo",
+    discount: "15% OFF",
+    description: "Main course + starter + drink on weekdays before 3 PM.",
+    code: "LUNCH15",
+    emoji: "☀️",
+    badge: "Weekdays",
+  },
+  {
+    id: "date-night",
+    name: "Date Night",
+    discount: "20% OFF",
+    description: "Two mains and a shared dessert — perfect for couples.",
+    code: "DATE20",
+    emoji: "💑",
+    badge: "Fri–Sun",
+  },
+  {
+    id: "family-feast",
+    name: "Family Feast",
+    discount: "$25 OFF",
+    description: "Orders over $80 for groups of 4 or more guests.",
+    code: "FAMILY25",
+    emoji: "👨‍👩‍👧‍👦",
+    badge: "4+ guests",
+  },
+  {
+    id: "happy-hour",
+    name: "Happy Hour",
+    discount: "10% OFF",
+    description: "Selected appetizers and house drinks, 4–7 PM daily.",
+    code: "HAPPY10",
+    emoji: "🍹",
+    badge: "4–7 PM",
+  },
 ] as const;
 
 const cardHover = {
@@ -97,6 +139,56 @@ export function CustomerDashboard() {
         ))}
       </div>
 
+      <section>
+        <PageHeader
+          title="Discount Packages"
+          description="Save on your next visit — use a code at checkout or mention it when you order."
+        />
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {DISCOUNT_PACKAGES.map((pkg, i) => (
+            <motion.div
+              key={pkg.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.07 }}
+              variants={cardHover}
+              whileHover="hover"
+            >
+              <Card className="group h-full overflow-hidden border-white/10 bg-gradient-to-br from-orange-500/10 via-card/70 to-card/60 backdrop-blur-xl transition-colors hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/10">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-3xl">{pkg.emoji}</span>
+                    <Badge className="shrink-0 border-orange-400/30 bg-orange-500/20 text-orange-200">
+                      {pkg.badge}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-lg">{pkg.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex size-9 items-center justify-center rounded-lg bg-orange-500/20">
+                      <Percent className="size-4 text-orange-500" />
+                    </div>
+                    <span className="text-2xl font-bold text-orange-500">{pkg.discount}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{pkg.description}</p>
+                  <div className="flex items-center gap-2 rounded-xl border border-dashed border-orange-500/30 bg-orange-500/5 px-3 py-2">
+                    <Tag className="size-4 shrink-0 text-orange-500" />
+                    <span className="font-mono text-sm font-semibold tracking-wide">{pkg.code}</span>
+                  </div>
+                  <Button
+                    asChild
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    <Link href="/menu">Use Package</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div>
@@ -112,6 +204,7 @@ export function CustomerDashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
                 >
+                  <Link href={`/menu/`}>
                   <Card className="group overflow-hidden border-white/10 bg-card/60 backdrop-blur-xl transition-all hover:border-orange-500/30">
                     <div className="flex gap-4 p-4">
                       <img
@@ -142,6 +235,7 @@ export function CustomerDashboard() {
                       </div>
                     </div>
                   </Card>
+                  </Link>
                 </motion.div>
               ))}
             </div>
