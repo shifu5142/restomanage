@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { RolePage } from "@/components/auth/role-page";
 import { CustomerReservations } from "@/components/customer/customer-reservations";
@@ -12,7 +12,6 @@ import {
   type ReservationFormData,
 } from "@/lib/reservations/form";
 import { calculateReservationPricing } from "@/lib/reservations/pricing";
-import { normalizeReservationRows } from "@/lib/reservations/normalize";
 import { supabase } from "@/lib/supabase/client";
 import type { Reservation } from "@/types";
 
@@ -21,11 +20,6 @@ function ReservationsPage() {
   const [formData, setFormData] = useState<ReservationFormData>(EMPTY_RESERVATION_FORM);
   const [bookedReservations, setBookedReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const adminReservations = useMemo(
-    () => normalizeReservationRows(bookedReservations),
-    [bookedReservations]
-  );
 
   useEffect(() => {
     if (userLoading) return;
@@ -132,7 +126,7 @@ function ReservationsPage() {
 
   return (
     <RolePage
-      admin={<ReservationsView reservations={adminReservations} />}
+      admin={<ReservationsView />}
       customer={
         <CustomerReservations
           formData={formData}

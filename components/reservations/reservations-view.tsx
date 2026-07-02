@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   LayoutGrid,
@@ -35,20 +35,37 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { formatDate, formatTime } from "@/lib/format";
+import { normalizeReservationRows } from "@/lib/reservations/normalize";
+import { supabase } from "@/lib/supabase/client";
 import type { Reservation, ReservationStatus } from "@/types";
 
 const PAGE_SIZE = 10;
 const STATUSES: ReservationStatus[] = ["pending", "confirmed", "seated", "completed", "cancelled"];
 
-interface ReservationsViewProps {
-  reservations: Reservation[];
-}
-
-export function ReservationsView({ reservations }: ReservationsViewProps) {
+export function ReservationsView() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [calendarDate, setCalendarDate] = useState<Date | undefined>(new Date());
+  const [bookedReservations, setBookedReservations] = useState<Reservation[]>([]);
+
+  useEffect(() => {
+    const fetchReservations = async () => {
+      const { data, error } = await supabase.from("reservations").select("*");
+      if (error) {
+        console.error(error);
+        return;
+      }
+      setBookedReservations(data ?? []);
+    };
+
+    fetchReservations();
+  }, []);
+
+  const reservations = useMemo(
+    () => normalizeReservationRows(bookedReservations),
+    [bookedReservations]
+  );
 
   const stats = useMemo(() => ({
     total: reservations.length,
