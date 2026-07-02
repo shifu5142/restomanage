@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Clock, Flame, Leaf, Search, ShoppingCart, Star, Wheat } from "lucide-react";
 import { toast } from "sonner";
@@ -24,7 +23,7 @@ import { formatCurrency, capitalize } from "@/lib/format";
 export function CustomerMenu() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
-  const { addMenuItem } = useCart();
+  const { addMenuItem, openCart } = useCart();
 
   const filtered = useMemo(() => {
     return mockData.menuItems.filter((item) => {
@@ -43,9 +42,7 @@ export function CustomerMenu() {
       price: item.price,
       image: item.image,
     });
-    toast.success(`Added ${item.name} to your cart`, {
-      description: "View your cart to review and checkout.",
-    });
+    toast.success(`Added ${item.name} to your cart`);
   }
 
   return (
@@ -58,8 +55,8 @@ export function CustomerMenu() {
           <Badge className="bg-orange-500/15 text-orange-600 hover:bg-orange-500/20">
             {filtered.length} dishes
           </Badge>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/cart">View Cart</Link>
+          <Button variant="outline" size="sm" onClick={openCart}>
+            View Cart
           </Button>
         </div>
       </PageHeader>
@@ -159,7 +156,7 @@ export function CustomerMenu() {
                   </span>
                 </div>
                 <Button
-                  className="w-full bg-orange-500 hover:bg-orange-600"
+                  className="w-full bg-orange-500 hover:bg-orange-600 cursor-pointer"
                   onClick={() => handleAddToCart(item)}
                 >
                   <ShoppingCart className="mr-2 size-4" />

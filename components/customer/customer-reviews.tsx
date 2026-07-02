@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { MessageSquare, Star } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { MessageSquare, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -16,11 +16,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { mockData } from "@/data/mock";
 import { useRole } from "@/hooks/use-role";
 import { formatRelative } from "@/lib/format";
-import type { Review } from "@/types";
+import { supabase } from "@/lib/supabase/client";
+
+type PrevReview = {
+  id: string;
+  number_star: number;
+  your_review: string;
+  dish?: string | null;
+  created_at?: string;
+};
 
 function StarRating({
   rating,
@@ -54,54 +70,72 @@ function StarRating({
 
 export function CustomerReviews() {
   const { display } = useRole();
-  const displayName = display?.name ?? "";
-
+  const displayName = display?.name ?? "You";
+  const [prevReviews, setPrevReviews] = useState<PrevReview[]>([]);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [dish, setDish] = useState("");
-  const [localReviews, setLocalReviews] = useState<Review[]>([]);
-
-  const myReviews = useMemo(() => {
-    const fromMock = mockData.reviews.filter(
-      (r) => r.customerName.toLowerCase() === displayName.toLowerCase()
-    );
-    return [...localReviews, ...fromMock].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-  }, [displayName, localReviews]);
+  const [reviewToDelete, setReviewToDelete] = useState<PrevReview | null>(null);
 
   const dishOptions = useMemo(
     () => mockData.menuItems.filter((m) => m.available).slice(0, 20),
     []
   );
-
-  function handleSubmit(e: React.FormEvent) {
+  
+  useEffect(() => {
+    async function getReviews() {
+      const{data:{user:{id}},error:getUserError} = await supabase.auth.getUser();
+      const {data,error} = await supabase.from("reviews").select("*").eq("user_id", id);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setPrevReviews(data);
+    }
+    getReviews();
+  }, []);
+  async function handleSubmit(e: React.FormEvent) {
+    const{data:{user:{id}},error:getUserError} = await supabase.auth.getUser();
     e.preventDefault();
+    try {
     if (!comment.trim()) {
       toast.error("Please write a comment for your review.");
       return;
     }
+   
+    if (getUserError) {
+      toast.error(getUserError.message);
+      return;
+    }
+    const {error} = await supabase.from("reviews").insert({
+      user_id: id,
+      number_star: rating,   // 1–5
+      dish: dish || null,   // optional
+      your_review: comment,    // required
+    }).select().single();
 
-    const newReview: Review = {
-      id: `rev-custom-${Date.now()}`,
-      customerId: "local",
-      customerName: displayName || "Guest",
-      avatar: display?.avatar ?? "",
-      rating,
-      comment: comment.trim(),
-      dish: dish || undefined,
-      date: new Date().toISOString(),
-    };
-
-    setLocalReviews((prev) => [newReview, ...prev]);
-    setRating(5);
-    setComment("");
-    setDish("");
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Thank you for your review!", {
       description: "Your feedback helps us improve.",
     });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An unknown error occurred");
+    }
   }
 
+  async function handleDeleteReview() {
+    setReviewToDelete(null);
+    const {error} = await supabase.from("reviews").delete().eq("id", reviewToDelete?.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Review deleted successfully");
+    setPrevReviews(prevReviews.filter((review) => review.id !== reviewToDelete?.id));
+  }
   return (
     <div className="space-y-6">
       <PageHeader
@@ -157,52 +191,93 @@ export function CustomerReviews() {
         </Card>
 
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Your Reviews</h2>
-          {myReviews.length === 0 ? (
+          <h2 className="text-lg font-semibold">Your Previous Reviews</h2>
+          {prevReviews.length === 0 ? (
             <EmptyState
               icon={MessageSquare}
               title="No reviews yet"
               description="Share your first dining experience using the form."
             />
           ) : (
-            myReviews.map((review) => (
+            prevReviews.map((review) => (
               <Card key={review.id} className="border-white/10 bg-card/60 backdrop-blur-xl">
                 <CardContent className="space-y-3 pt-6">
                   <div className="flex items-start gap-3">
                     <Avatar>
-                      <AvatarImage src={review.avatar} alt={review.customerName} />
-                      <AvatarFallback>{review.customerName.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-orange-500/15 text-orange-600">
+                        {displayName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold">{review.customerName}</p>
-                        <StarRating rating={review.rating} />
+                        <p className="font-semibold">{displayName}</p>
+                        <StarRating rating={review.number_star} />
                       </div>
-                      <p className="text-xs text-muted-foreground">{formatRelative(review.date)}</p>
-                      <p className="mt-2 text-sm">{review.comment}</p>
+                      {review.created_at && (
+                        <p className="text-xs text-muted-foreground">
+                          {formatRelative(review.created_at)}
+                        </p>
+                      )}
+                      <p className="mt-2 text-sm leading-relaxed">{review.your_review}</p>
                       {review.dish && (
-                        <p className="mt-1 text-xs text-orange-500">Ordered: {review.dish}</p>
+                        <p className="mt-2 text-xs font-medium text-orange-500">
+                          Dish: {review.dish}
+                        </p>
                       )}
                     </div>
                   </div>
-                  {review.photos && review.photos.length > 0 && (
-                    <div className="flex gap-2">
-                      {review.photos.map((photo, i) => (
-                        <img
-                          key={i}
-                          src={photo}
-                          alt="Review"
-                          className="size-16 rounded-lg object-cover"
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 cursor-pointer text-muted-foreground hover:text-destructive"
+                      aria-label="Delete review"
+                      onClick={() => setReviewToDelete(review)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))
           )}
         </div>
       </div>
+
+      <Dialog
+        open={!!reviewToDelete}
+        onOpenChange={(open) => !open && setReviewToDelete(null)}
+      >
+        <DialogContent
+          className="border-white/10 bg-card/95 backdrop-blur-xl sm:max-w-md"
+          showCloseButton={false}
+        >
+          <DialogHeader>
+            <DialogTitle>Delete review?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this review? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => setReviewToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteReview}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

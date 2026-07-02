@@ -98,9 +98,16 @@ function OrdersView({ orders }: OrdersViewProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.slice(0, 50).map((order) => (
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                    No orders found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filtered.slice(0, 50).map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
+                  <TableCell className="font-medium">{order.id.slice(0, 8).toUpperCase()}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
                   <TableCell>{order.items.length} items</TableCell>
                   <TableCell>{formatCurrency(order.total)}</TableCell>
@@ -113,7 +120,8 @@ function OrdersView({ orders }: OrdersViewProps) {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

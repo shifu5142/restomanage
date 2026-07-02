@@ -32,7 +32,9 @@ export function ReviewsView({ reviews }: ReviewsViewProps) {
   const [replies, setReplies] = useState<Record<string, string>>({});
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  const avgRating = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+  const avgRating = reviews.length
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : 0;
   const fiveStars = reviews.filter((r) => r.rating === 5).length;
 
   return (
@@ -46,7 +48,14 @@ export function ReviewsView({ reviews }: ReviewsViewProps) {
       </div>
 
       <div className="space-y-4">
-        {reviews.slice(0, 20).map((review) => (
+        {reviews.length === 0 ? (
+          <Card className="border-white/10 bg-card/60 backdrop-blur-xl">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              No reviews yet.
+            </CardContent>
+          </Card>
+        ) : (
+          reviews.slice(0, 20).map((review) => (
           <Card key={review.id} className="border-white/10 bg-card/60 backdrop-blur-xl">
             <CardContent className="space-y-4 pt-6">
               <div className="flex items-start gap-3">
@@ -123,7 +132,8 @@ export function ReviewsView({ reviews }: ReviewsViewProps) {
               )}
             </CardContent>
           </Card>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

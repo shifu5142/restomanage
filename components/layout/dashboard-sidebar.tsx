@@ -29,7 +29,7 @@ export function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isAdmin, loading } = useRole();
-  const { itemCount } = useCart();
+  const { itemCount, openCart } = useCart();
 
   const navItems = NAV_ITEMS.filter(
     (item) => !("adminOnly" in item && item.adminOnly) || isAdmin
@@ -47,13 +47,13 @@ export function DashboardSidebar() {
   return (
     <Sidebar className="border-r border-white/10 bg-sidebar/80 backdrop-blur-xl">
       <SidebarHeader className="border-b border-white/10 p-4">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+        <Link href="/dashboard" className="flex items-center gap-2.5 cursor-pointer">
           <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25">
             <Utensils className="size-5" />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold tracking-tight">{APP_NAME}</span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="font-bold tracking-tight cursor-pointer">{APP_NAME}</span>
+            <span className="text-[10px] text-muted-foreground cursor-pointer">
               {isAdmin ? "Restaurant OS" : "Dine & Order"}
             </span>
           </div>
@@ -69,13 +69,39 @@ export function DashboardSidebar() {
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => (
                     <SidebarMenuItem key={i}>
-                      <Skeleton className="mx-2 h-8 rounded-md" />
+                      <Skeleton className="mx-2 h-8 rounded-md cursor-pointer" />
                     </SidebarMenuItem>
                   ))
                 : navItems.map((item) => {
                     const isActive =
                       pathname === item.href ||
                       pathname.startsWith(`${item.href}/`);
+                    const isCartItem = item.href === "/cart";
+
+                    if (isCartItem && !isAdmin) {
+                      return (
+                        <SidebarMenuItem key={item.href}>
+                          <SidebarMenuButton
+                            isActive={isActive}
+                            className={cn(
+                              "transition-all",
+                              isActive &&
+                                "bg-orange-500/10 text-orange-500 hover:bg-orange-500/15 hover:text-orange-500 cursor-pointer"
+                            )}
+                            onClick={openCart}
+                          >
+                            <item.icon className="size-4" />
+                            <span>{item.title}</span>
+                            {itemCount > 0 && (
+                              <Badge className="ml-auto bg-orange-500 px-1.5 text-[10px] text-white hover:bg-orange-500">
+                                {itemCount}
+                              </Badge>
+                            )}
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    }
+
                     return (
                       <SidebarMenuItem key={item.href}>
                         <SidebarMenuButton
@@ -84,14 +110,14 @@ export function DashboardSidebar() {
                           className={cn(
                             "transition-all",
                             isActive &&
-                              "bg-orange-500/10 text-orange-500 hover:bg-orange-500/15 hover:text-orange-500"
+                              "bg-orange-500/10 text-orange-500 hover:bg-orange-500/15 hover:text-orange-500 cursor-pointer"
                           )}
                         >
                           <Link href={item.href}>
                             <item.icon className="size-4" />
                             <span>{item.title}</span>
                             {item.href === "/cart" && itemCount > 0 && (
-                              <Badge className="ml-auto bg-orange-500 px-1.5 text-[10px] text-white hover:bg-orange-500">
+                              <Badge className="ml-auto bg-orange-500 px-1.5 text-[10px] text-white hover:bg-orange-500 cursor-pointer">
                                 {itemCount}
                               </Badge>
                             )}
@@ -108,7 +134,7 @@ export function DashboardSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="cursor-pointer text-muted-foreground hover:text-destructive"
+              className="cursor-pointer text-muted-foreground hover:text-destructive cursor-pointer"
               onClick={handleLogout}
             >
               <LogOut className="size-4" />

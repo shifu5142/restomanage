@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Users, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -15,6 +15,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { mockData } from "@/data/mock";
 import { useUser } from "@/hooks/use-user";
 import {
@@ -103,6 +111,14 @@ export function CustomerReservations({
 }: CustomerReservationsProps) {
   const { user, display } = useUser();
   const userEmail = user?.email ?? "";
+  const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
+
+  const supportPhone = useMemo(() => {
+    const area = 200 + Math.floor(Math.random() * 800);
+    const mid = 100 + Math.floor(Math.random() * 900);
+    const last = 1000 + Math.floor(Math.random() * 9000);
+    return `+1 (${area}) ${mid}-${last}`;
+  }, []);
 
   const partySize = formData.partySize;
 
@@ -204,6 +220,13 @@ export function CustomerReservations({
     await onSubmit(e);
   }
 
+  async function handleConfirmDelete() {
+    if (!reservationToDelete) return;
+    const id = reservationToDelete.id;
+    setReservationToDelete(null);
+    await onDeleteReservation(id);
+  }
+
   function ReservationCard({
     reservation,
     showCancel,
@@ -257,7 +280,7 @@ export function CustomerReservations({
                   variant="outline"
                   size="sm"
                   className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:cursor-pointer"
-                  onClick={() => onDeleteReservation(reservation.id)}
+                  onClick={() => setReservationToDelete(reservation)}
                 >
                   <XCircle className="mr-1.5 size-3.5" />
                   Cancel Reservation
@@ -427,6 +450,46 @@ export function CustomerReservations({
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={!!reservationToDelete}
+        onOpenChange={(open) => !open && setReservationToDelete(null)}
+      >
+        <DialogContent
+          className="border-white/10 bg-card/95 backdrop-blur-xl sm:max-w-md"
+          showCloseButton={false}
+        >
+          <DialogHeader>
+            <DialogTitle>Cancel reservation?</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>Are you sure you want to cancel this reservation? This action cannot be undone.</p>
+                <p>
+                  If you want to check for available seats, call{" "}
+                  <span className="font-semibold text-foreground">{supportPhone}</span>.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => setReservationToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
+            >
+              Confirm Deletion
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

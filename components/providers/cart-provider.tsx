@@ -16,6 +16,7 @@ import type {
   ReservationCartItem,
 } from "@/lib/cart/types";
 import type { Reservation } from "@/types";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 
 type ConfirmCustomer = {
   name: string;
@@ -31,6 +32,9 @@ type CartContextValue = {
   menuTotal: number;
   grandTotal: number;
   confirmedReservations: Reservation[];
+  isCartOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
   addReservation: (item: AddReservationInput) => void;
   addMenuItem: (item: AddMenuItemInput) => void;
   removeItem: (cartId: string) => void;
@@ -44,9 +48,13 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [confirmedReservations, setConfirmedReservations] = useState<Reservation[]>(
     []
   );
+
+  const openCart = useCallback(() => setIsCartOpen(true), []);
+  const closeCart = useCallback(() => setIsCartOpen(false), []);
 
   const reservationItems = useMemo(
     () => items.filter((item): item is ReservationCartItem => item.type === "reservation"),
@@ -181,6 +189,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       menuTotal,
       grandTotal,
       confirmedReservations,
+      isCartOpen,
+      openCart,
+      closeCart,
       addReservation,
       addMenuItem,
       removeItem,
@@ -198,6 +209,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       menuTotal,
       grandTotal,
       confirmedReservations,
+      isCartOpen,
+      openCart,
+      closeCart,
       addReservation,
       addMenuItem,
       removeItem,
@@ -208,7 +222,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     ]
   );
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      <CartDrawer />
+    </CartContext.Provider>
+  );
 }
 
 export function useCartContext() {

@@ -11,6 +11,7 @@ import { PageLoading } from "@/components/ui/page-loading";
 import { useUser } from "@/hooks/use-user";
 import { groupOrderRows, type GroupedOrder } from "@/lib/orders/grouped";
 import { supabase } from "@/lib/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 
 function OrderDetailPage() {
   const params = useParams();
@@ -54,7 +55,13 @@ function OrderDetailPage() {
   }, [orderId]);
 
   if (userLoading || loading) {
-    return <PageLoading message="Loading order details..." />;
+    return (
+      <Card className="border-white/10 bg-card/60 backdrop-blur-xl">
+        <CardContent className="py-16 text-center text-muted-foreground">
+          Loading order details...
+        </CardContent>
+      </Card>
+    );
   }
 
   if (notFound || !order) {

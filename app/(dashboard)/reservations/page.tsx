@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { RolePage } from "@/components/auth/role-page";
 import { CustomerReservations } from "@/components/customer/customer-reservations";
 import { ReservationsView } from "@/components/reservations/reservations-view";
 import { PageLoading } from "@/components/ui/page-loading";
-import { mockData } from "@/data/mock";
 import { useUser } from "@/hooks/use-user";
 import {
   EMPTY_RESERVATION_FORM,
   type ReservationFormData,
 } from "@/lib/reservations/form";
 import { calculateReservationPricing } from "@/lib/reservations/pricing";
+import { normalizeReservationRows } from "@/lib/reservations/normalize";
 import { supabase } from "@/lib/supabase/client";
 import type { Reservation } from "@/types";
 
@@ -22,12 +22,17 @@ function ReservationsPage() {
   const [bookedReservations, setBookedReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const adminReservations = useMemo(
+    () => normalizeReservationRows(bookedReservations),
+    [bookedReservations]
+  );
+
   useEffect(() => {
     if (userLoading) return;
 
     const fetchBookedReservations = async () => {
       setLoading(true);
-
+      
       try {
         const {
           data: {
@@ -39,14 +44,15 @@ function ReservationsPage() {
         }
         const { data, error } = await supabase
           .from("reservations")
-          .select("* where customer_id = $1", [id]);
+          .select("*")
+          .eq("user_id", id);
         if (error) {
           toast.error(error.message);
           return;
         }
         setBookedReservations(data);
       } catch (error) {
-        toast.error((error as Error).message);
+        console.error(error);
         setBookedReservations([]);
       } finally {
         setLoading(false);
@@ -72,7 +78,7 @@ function ReservationsPage() {
     const customerEmail = id?.email ?? "";
 
     const { error } = await supabase.from("reservations").insert({
-      customer_id: id,
+      user_id: id,
       customer_name: customerName,
       customer_email: customerEmail,
       customer_phone: formData.phone,
@@ -126,7 +132,7 @@ function ReservationsPage() {
 
   return (
     <RolePage
-      admin={<ReservationsView reservations={mockData.reservations} />}
+      admin={<ReservationsView reservations={adminReservations} />}
       customer={
         <CustomerReservations
           formData={formData}

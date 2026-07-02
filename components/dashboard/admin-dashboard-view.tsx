@@ -28,11 +28,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
+import type { Order, Reservation } from "@/types";
 import { mockData } from "@/data/mock";
 import { formatCurrency, formatDate, formatTime } from "@/lib/format";
+import { shortOrderId } from "@/lib/orders/grouped";
 
-export function AdminDashboardView() {
-  const { dashboardStats, weeklyChartData, orders, reservations } = mockData;
+type AdminDashboardViewProps = {
+  orders: Order[];
+  reservations: Reservation[];
+};
+
+export function AdminDashboardView({ orders, reservations }: AdminDashboardViewProps) {
+  const { dashboardStats, weeklyChartData } = mockData;
+
+  const totalRevenue = useMemo(
+    () => orders.reduce((sum, order) => sum + order.total, 0),
+    [orders]
+  );
+  const activeReservations = useMemo(
+    () =>
+      reservations.filter((r) => r.status === "confirmed" || r.status === "pending").length,
+    [reservations]
+  );
+  const averageOrderValue = orders.length ? totalRevenue / orders.length : 0;
 
   const recentOrders = [...orders]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -53,7 +72,7 @@ export function AdminDashboardView() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <StatCard
           title="Today's Revenue"
-          value={formatCurrency(dashboardStats.todayRevenue)}
+          value={formatCurrency(totalRevenue)}
           change={dashboardStats.growth}
           icon={DollarSign}
         />
@@ -65,13 +84,13 @@ export function AdminDashboardView() {
         />
         <StatCard
           title="Today's Orders"
-          value={String(dashboardStats.orders)}
+          value={String(orders.length)}
           change={5.4}
           icon={ShoppingBag}
         />
         <StatCard
           title="Active Reservations"
-          value={String(dashboardStats.reservations)}
+          value={String(activeReservations)}
           change={3.1}
           icon={CalendarDays}
         />
@@ -100,7 +119,7 @@ export function AdminDashboardView() {
         />
         <StatCard
           title="Avg Order Value"
-          value={formatCurrency(dashboardStats.averageOrderValue)}
+          value={formatCurrency(averageOrderValue)}
           change={4.2}
           icon={Receipt}
         />
@@ -148,7 +167,7 @@ export function AdminDashboardView() {
               <TableBody>
                 {recentOrders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
+                    <TableCell className="font-medium">#{shortOrderId(order.id)}</TableCell>
                     <TableCell>{order.customerName}</TableCell>
                     <TableCell>{formatCurrency(order.total)}</TableCell>
                     <TableCell>
