@@ -217,6 +217,8 @@ export interface DeliveryOrder {
   orderId: string;
   customerName: string;
   address: string;
+  latitude: number;
+  longitude: number;
   driverId?: string;
   driverName?: string;
   status: "pending" | "picked_up" | "in_transit" | "delivered";

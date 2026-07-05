@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Eye, Search } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatusBadge } from "@/components/dashboard/status-badge";
@@ -30,18 +30,36 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatRelative, capitalize } from "@/lib/format";
+import { groupedOrdersToAdminOrders } from "@/lib/orders/admin";
+import { groupOrderRows, type GroupedOrder } from "@/lib/orders/grouped";
+import { supabase } from "@/lib/supabase/client";
 import type { Order, OrderStatus } from "@/types";
 
 const STATUSES: OrderStatus[] = ["pending", "confirmed", "preparing", "ready", "delivered", "completed", "cancelled"];
 
-interface OrdersViewProps {
-  orders: Order[];
-}
-
-function OrdersView({ orders }: OrdersViewProps) {
+function OrdersView() {
+  const [groupedOrders, setGroupedOrders] = useState<GroupedOrder[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const { data, error } = await supabase.from("orders").select("*");
+      if (error) {
+        console.error(error);
+        return;
+      }
+      setGroupedOrders(groupOrderRows(data ?? []));
+    };
+
+    fetchOrders();
+  }, []);
+
+  const orders = useMemo(
+    () => groupedOrdersToAdminOrders(groupedOrders),
+    [groupedOrders]
+  );
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {

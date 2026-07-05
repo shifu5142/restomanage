@@ -26,6 +26,7 @@ import {
   FOOD_IMAGES,
   MENU_CATEGORIES,
 } from "@/lib/constants";
+import { DELIVERY_LOCATIONS } from "@/lib/delivery/locations";
 
 function seededRandom(seed: number) {
   let s = seed;
@@ -338,19 +339,25 @@ export function generateDeliveryOrders(orders: Order[]): DeliveryOrder[] {
   return orders
     .filter((o) => !o.tableId)
     .slice(0, 30)
-    .map((o, i) => ({
-      id: `del-${i + 1}`,
-      orderId: o.id,
-      customerName: o.customerName,
-      address: `${Math.floor(rand() * 900) + 100} Main St, Apt ${Math.floor(rand() * 20) + 1}`,
-      driverId: rand() > 0.3 ? `emp-${Math.floor(rand() * 5) + 20}` : undefined,
-      driverName: rand() > 0.3 ? genName() : undefined,
-      status: pick(["pending", "picked_up", "in_transit", "delivered"] as const),
-      estimatedTime: Math.floor(rand() * 40) + 15,
-      vehicle: pick(["Toyota Prius", "Honda Civic", "Ford Transit", "Bike"]),
-      total: o.total,
-      createdAt: o.createdAt,
-    }));
+    .map((o, i) => {
+      const location = DELIVERY_LOCATIONS[i % DELIVERY_LOCATIONS.length];
+
+      return {
+        id: `del-${i + 1}`,
+        orderId: o.id,
+        customerName: o.customerName,
+        address: location.address,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        driverId: rand() > 0.3 ? `emp-${Math.floor(rand() * 5) + 20}` : undefined,
+        driverName: rand() > 0.3 ? genName() : undefined,
+        status: pick(["pending", "picked_up", "in_transit", "delivered"] as const),
+        estimatedTime: Math.floor(rand() * 40) + 15,
+        vehicle: pick(["Toyota Prius", "Honda Civic", "Ford Transit", "Bike"]),
+        total: o.total,
+        createdAt: o.createdAt,
+      };
+    });
 }
 
 export function generateChatMessages(): ChatMessage[] {

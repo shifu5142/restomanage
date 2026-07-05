@@ -152,4 +152,13 @@
     mask-composite: exclude;
     pointer-events: none;
   }
+
+  .leaflet-container {
+    z-index: 0;
+    font: inherit;
+  }
+
+  .leaflet-popup-content-wrapper {
+    border-radius: 0.75rem;
+  }
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { MapPin, Navigation, Package, Truck } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -8,6 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatCurrency, formatRelative } from "@/lib/format";
 import type { DeliveryOrder } from "@/types";
+
+const DeliveryMap = dynamic(
+  () => import("@/components/delivery/delivery-map").then((mod) => mod.DeliveryMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[400px] items-center justify-center rounded-2xl border border-white/10 bg-background/40 text-sm text-muted-foreground">
+        Loading map...
+      </div>
+    ),
+  }
+);
 
 interface DeliveryViewProps {
   deliveries: DeliveryOrder[];
@@ -48,23 +61,30 @@ export function DeliveryView({ deliveries }: DeliveryViewProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative flex h-[400px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/50 to-slate-800/30">
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:30px_30px]" />
-              <div className="relative text-center">
-                <MapPin className="mx-auto size-12 text-orange-500/50" />
-                <p className="mt-2 text-sm text-muted-foreground">Interactive map integration</p>
-                <p className="text-xs text-muted-foreground">Connect Google Maps or Mapbox API</p>
-              </div>
-              {deliveries.slice(0, 5).map((d, i) => (
-                <div
-                  key={d.id}
-                  className="absolute flex size-8 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white shadow-lg"
-                  style={{ left: `${15 + i * 15}%`, top: `${20 + (i % 3) * 20}%` }}
-                  title={d.address}
-                >
-                  {i + 1}
-                </div>
-              ))}
+            <div className="overflow-hidden rounded-2xl border border-white/10">
+              <DeliveryMap deliveries={deliveries} />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-full bg-green-500" />
+                Restaurant
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-full bg-orange-500" />
+                Pending
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-full bg-blue-500" />
+                Picked up
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-full bg-violet-500" />
+                In transit
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-full bg-emerald-500" />
+                Delivered
+              </span>
             </div>
           </CardContent>
         </Card>
