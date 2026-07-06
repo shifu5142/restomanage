@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { MessageSquare, Star } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { MessageSquare, Star, UtensilsCrossed } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatRelative } from "@/lib/format";
-import type { Review } from "@/types";
+import {
+  type SupabaseReviewRow,
+} from "@/lib/reviews/normalize";
+import { supabase } from "@/lib/supabase/client";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -24,18 +28,37 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-interface ReviewsViewProps {
-  reviews: Review[];
-}
-
-export function ReviewsView({ reviews }: ReviewsViewProps) {
+export function ReviewsView() {
+  const [reviews, setReviews] = useState<SupabaseReviewRow[]>([]);
   const [replies, setReplies] = useState<Record<string, string>>({});
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  const avgRating = reviews.length
-    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-    : 0;
-  const fiveStars = reviews.filter((r) => r.rating === 5).length;
+  useEffect(() => {
+    async function getReviews() {
+      const { data, error } = await supabase.from("reviews").select("*");
+      if (error) {
+        console.error(error);
+        setReviews([]);
+        return;
+      }
+      setReviews(data ?? []);
+    }
+
+    getReviews();
+  }, []);
+
+  const avgRating = useMemo(
+    () =>
+      reviews.length
+        ? reviews.reduce((sum, review) => sum + review.number_star, 0) / reviews.length
+        : 0,
+    [reviews]
+  );
+
+  const fiveStars = useMemo(
+    () => reviews.filter((review) => review.number_star === 5).length,
+    [reviews]
+  );
 
   return (
     <div className="space-y-6">
@@ -55,48 +78,40 @@ export function ReviewsView({ reviews }: ReviewsViewProps) {
             </CardContent>
           </Card>
         ) : (
-          reviews.slice(0, 20).map((review) => (
+          reviews.slice(0, 20).map((review) => {
+            const customerLabel = review.user_id
+              ? `User #${review.user_id.slice(0, 8).toUpperCase()}`
+              : "Guest";
+
+            return (
           <Card key={review.id} className="border-white/10 bg-card/60 backdrop-blur-xl">
             <CardContent className="space-y-4 pt-6">
               <div className="flex items-start gap-3">
                 <Avatar>
-                  <AvatarImage src={review.avatar} alt={review.customerName} />
-                  <AvatarFallback>{review.customerName.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{customerLabel.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="font-semibold">{review.customerName}</p>
-                      <p className="text-xs text-muted-foreground">{formatRelative(review.date)}</p>
+                      <p className="font-semibold">{customerLabel}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {review.created_at ? formatRelative(review.created_at) : "Recently"}
+                      </p>
                     </div>
-                    <StarRating rating={review.rating} />
+                    <StarRating rating={review.number_star} />
                   </div>
-                  <p className="mt-2 text-sm">{review.comment}</p>
+                  <p className="mt-2 text-sm">{review.your_review}</p>
                   {review.dish && (
-                    <p className="mt-1 text-xs text-orange-500">Ordered: {review.dish}</p>
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-orange-500">
+                      <UtensilsCrossed className="size-3" />
+                      {review.dish}
+                    </p>
                   )}
+                  <Badge variant="outline" className="mt-3 border-white/10 font-mono text-[10px]">
+                    {review.id.slice(0, 8)}
+                  </Badge>
                 </div>
               </div>
-
-              {review.photos && review.photos.length > 0 && (
-                <div className="flex gap-2">
-                  {review.photos.map((photo, i) => (
-                    <img
-                      key={i}
-                      src={photo}
-                      alt="Review photo"
-                      className="size-20 rounded-xl object-cover"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {review.reply && !replyingTo && (
-                <div className="rounded-xl border border-white/10 bg-background/40 p-3">
-                  <p className="text-xs font-medium text-orange-500">Your Reply</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{review.reply}</p>
-                </div>
-              )}
 
               {replyingTo === review.id ? (
                 <div className="space-y-2">
@@ -119,7 +134,7 @@ export function ReviewsView({ reviews }: ReviewsViewProps) {
                     </Button>
                   </div>
                 </div>
-              ) : !review.reply && (
+              ) : (
                 <Button
                   variant="outline"
                   size="sm"
@@ -132,7 +147,8 @@ export function ReviewsView({ reviews }: ReviewsViewProps) {
               )}
             </CardContent>
           </Card>
-        ))
+            );
+          })
         )}
       </div>
     </div>

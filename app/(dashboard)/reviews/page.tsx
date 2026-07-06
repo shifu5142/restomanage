@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { RolePage } from "@/components/auth/role-page";
 import { CustomerReviews } from "@/components/customer/customer-reviews";
 import { ReviewsView } from "@/components/reviews/reviews-view";
 import { PageLoading } from "@/components/ui/page-loading";
-import {
-  supabaseReviewsToAdminReviews,
-  type SupabaseReviewRow,
-} from "@/lib/reviews/normalize";
+import { type SupabaseReviewRow } from "@/lib/reviews/normalize";
 import { supabase } from "@/lib/supabase/client";
 
 function ReviewsPage() {
   const [reviews, setReviews] = useState<SupabaseReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const adminReviews = useMemo(() => supabaseReviewsToAdminReviews(reviews), [reviews]);
 
   useEffect(() => {
     async function getReviews() {
@@ -38,7 +33,7 @@ function ReviewsPage() {
 
   return (
     <RolePage
-      admin={<ReviewsView reviews={adminReviews} />}
+      admin={<ReviewsView />}
       customer={<CustomerReviews />}
     />
   );
